@@ -47,7 +47,9 @@ body.manual-active .auto-only{display:none}
 (function(){'use strict';
 const $=id=>document.getElementById(id);
 const symbols=['A','B','C','D','P','Q','R','¬','∧','∨','⊃','→','(',')',',','Γ','Δ'];
-const keys=$('keys'); symbols.forEach(s=>{const b=document.createElement('button');b.className='key';b.textContent=s;b.type='button';b.addEventListener('click',()=>{const x=$('goal'),i=x.selectionStart??x.value.length,j=x.selectionEnd??i;x.value=x.value.slice(0,i)+s+x.value.slice(j);x.focus();x.setSelectionRange(i+s.length,i+s.length)});keys.append(b)});
+const keys=$('keys');
+function insertGoalSymbol(s){const x=$('goal'),i=x.selectionStart??x.value.length,j=x.selectionEnd??i;x.value=x.value.slice(0,i)+s+x.value.slice(j);x.focus();x.setSelectionRange(i+s.length,i+s.length)}
+symbols.forEach(s=>{const b=document.createElement('button');b.className='key';b.textContent=s;b.type='button';b.addEventListener('click',()=>insertGoalSymbol(s));keys.append(b)});
 let root=null, current=null, selected=null, nextId=1, history=[], mode='auto';
 const EXAMPLES=['A∧B→B∧A','→A⊃(B⊃A)','A⊃B,¬B→¬A'];
 function tokenize(str){const arr=[];let i=0;while(i<str.length){const rest=str.slice(i),c=str[i];if(/\s/.test(c)){i++;continue}let val=null,adv=1;if(rest.startsWith('&&')){val='∧';adv=2}else if(rest.startsWith('||')){val='∨';adv=2}else if(rest.startsWith('=>')||rest.startsWith('->')){val='⊃';adv=2}else if(c==='&')val='∧';else if(c==='|' )val='∨';else if(c==='!'||c==='~')val='¬';else if('¬∧∨⊃()'.includes(c))val=c;else{const m=rest.match(/^[A-Za-z][A-Za-z0-9_]*/);if(m){val=m[0];adv=val.length}else throw Error('論理式に使えない文字があります: '+c)}arr.push(val);i+=adv}return arr}
@@ -128,6 +130,19 @@ const symbolGroups=[
  {name:'括弧・区切り',note:'式の構築',items:['(',')','[',']','{','}',',',';',';',':','.','|','/','_','′','…']},
  {name:'シークエントの定型',note:'よく使う形を一度で入力',items:['A→A','B→B','C→C','A,B→C','A⊃B','A∧B','A∨B','¬A','Γ→Δ','Γ,A→Δ','Γ→Δ,A','A,Γ→Δ','Γ→Δ,A']}
 ];
+(function buildGoalSymbols(){
+ const details=document.createElement('details');details.className='manual-palette';
+ const summary=document.createElement('summary');summary.textContent='すべての記号を表示（9カテゴリ）';details.append(summary);
+ const notice=document.createElement('p');notice.className='hint';notice.textContent='LKの基本結合子以外の記号を含む式は手動モードで入力してください。';details.append(notice);
+ for(const group of symbolGroups){
+   const category=document.createElement('details');category.className='goal-category';
+   const caption=document.createElement('summary');caption.textContent=group.name+'（'+group.note+'）';category.append(caption);
+   const wrap=document.createElement('div');wrap.className='symbols-wrap';
+   for(const value of group.items){const b=document.createElement('button');b.type='button';b.className=value.length>2?'snippet':'';b.textContent=value;b.addEventListener('click',()=>insertGoalSymbol(value));wrap.append(b)}
+   category.append(wrap);details.append(category)
+ }
+ keys.insertAdjacentElement('afterend',details)
+})();
 function makeManualNode(source){const val=source.trim();let parsed=null;try{parsed=parseSequent(val)}catch(e){}const node=newNode(parsed?.left??[],parsed?.right??[]);node.manual=true;if(!parsed)node.manualSeq=val;return node}
 function makeModal(title){const back=document.createElement('div');back.className='modal-back';const panel=document.createElement('div');panel.className='modal';const head=document.createElement('h3');head.textContent=title;panel.append(head);back.append(panel);back.addEventListener('click',e=>{if(e.target===back)back.remove()});$('modalRoot').append(back);return {back,panel}}
 function makeManualInput(value,label,host){const wrap=document.createElement('div');wrap.className='manual-field';const lab=document.createElement('label');lab.textContent=label;const input=document.createElement('input');input.type='text';input.value=value;input.spellcheck=false;input.autocomplete='off';wrap.append(lab,input);host.append(wrap);return input}
