@@ -17,6 +17,9 @@
 .manual-pad button{font:19px Georgia,serif;background:#f5f7fc;border:1px solid #d5ddec;border-radius:8px;min-height:39px;min-width:39px;padding:6px}
 .manual-snippets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .manual-snippets button{font:13px Georgia,serif;background:#eef2fc;border:1px solid #d9e3fb;border-radius:8px;min-height:34px;padding:6px 9px}
+.manual-target{position:sticky;top:-18px;z-index:2;margin:0 -5px 12px;padding:11px 12px;border:1px solid #cbd8f8;border-radius:10px;background:#edf2ff;box-shadow:0 3px 8px #23365d12}
+.manual-target-title{font-size:11px;font-weight:700;color:#53678f;margin:0 0 5px}
+.manual-target-sequent{font:17px Georgia,"Noto Serif JP",serif;color:#172d65;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.55}
 .manual-palette{margin:12px 0 8px;padding:10px;background:#f8faff;border:1px solid #dde5f6;border-radius:12px}
 .manual-palette h4{font-size:12px;margin:0 0 7px}
 .manual-palette details{border-top:1px solid #e1e7f0;padding:6px 0}
@@ -188,7 +191,12 @@ function addManualPad(panel,getTarget){
 }
 function modalFooter(panel,back,onSave){const footer=document.createElement('div');footer.className='modal-footer';const cancel=document.createElement('button');cancel.className='btn';cancel.textContent='キャンセル';cancel.onclick=()=>back.remove();const save=document.createElement('button');save.className='btn primary';save.textContent='反映';save.onclick=onSave;footer.append(cancel,save);panel.append(footer)}
 function editManual(){const n=find(root,current);if(!n||n.rule)return;const {back,panel}=makeModal('シークエントを編集');const input=makeManualInput(textSeq(n),'文字や記号を自由に入力できます',panel);addManualPad(panel,()=>input);modalFooter(panel,back,()=>{if(!input.value.trim()){toast('シークエントを入力してください');return}snapshot();const next=makeManualNode(input.value);n.left=next.left;n.right=next.right;n.manualSeq=next.manualSeq;n.manual=true;selected=null;back.remove();persist();render()});input.focus()}
-function composeManual(){const n=find(root,current);if(!n||n.rule)return;const {back,panel}=makeModal('上段と規則名を自由に配置');const ruleWrap=document.createElement('div');ruleWrap.className='manual-field';const ruleLabel=document.createElement('label');ruleLabel.textContent='横線につける推論規則名';const select=document.createElement('select');for(const name of ruleNames){const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.append(opt)}select.value='∧左1';ruleWrap.append(ruleLabel,select);panel.append(ruleWrap);const custom=makeManualInput('','規則名を自由入力（「その他」のとき）',panel);custom.parentElement.style.display='none';select.onchange=()=>{custom.parentElement.style.display=select.value==='その他（自由入力）'?'flex':'none'};
+function composeManual(){const n=find(root,current);if(!n||n.rule)return;const {back,panel}=makeModal('上段と規則名を自由に配置');
+const targetBox=document.createElement('div');targetBox.className='manual-target';targetBox.setAttribute('role','note');
+const targetLabel=document.createElement('p');targetLabel.className='manual-target-title';targetLabel.textContent='対象の式（下段・結論）';
+const targetFormula=document.createElement('div');targetFormula.className='manual-target-sequent';targetFormula.textContent=textSeq(n);
+targetBox.append(targetLabel,targetFormula);panel.append(targetBox);
+const ruleWrap=document.createElement('div');ruleWrap.className='manual-field';const ruleLabel=document.createElement('label');ruleLabel.textContent='横線につける推論規則名';const select=document.createElement('select');for(const name of ruleNames){const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.append(opt)}select.value='∧左1';ruleWrap.append(ruleLabel,select);panel.append(ruleWrap);const custom=makeManualInput('','規則名を自由入力（「その他」のとき）',panel);custom.parentElement.style.display='none';select.onchange=()=>{custom.parentElement.style.display=select.value==='その他（自由入力）'?'flex':'none'};
 const heading=document.createElement('p');heading.className='hint';heading.textContent='上段（前提）を入力してください。0段ならこの枝を終端にします。';panel.append(heading);
 const rows=document.createElement('div');panel.append(rows);const inputs=[];let focused=null;
 function addRow(value=''){if(inputs.length>=4){toast('上段は最大4つです');return}const wrap=document.createElement('div');wrap.className='manual-premise';const inp=document.createElement('input');inp.type='text';inp.value=value;inp.spellcheck=false;inp.placeholder='例：A → A';inp.setAttribute('aria-label','上段 '+(inputs.length+1));inp.addEventListener('focus',()=>focused=inp);const del=document.createElement('button');del.className='btn tiny';del.textContent='削除';del.type='button';del.onclick=()=>{const idx=inputs.indexOf(inp);if(idx>=0)inputs.splice(idx,1);wrap.remove();focused=inputs[0]??null};wrap.append(inp,del);rows.append(wrap);inputs.push(inp);return inp}
