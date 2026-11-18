@@ -17,6 +17,17 @@
 .manual-pad button{font:19px Georgia,serif;background:#f5f7fc;border:1px solid #d5ddec;border-radius:8px;min-height:39px;min-width:39px;padding:6px}
 .manual-snippets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .manual-snippets button{font:13px Georgia,serif;background:#eef2fc;border:1px solid #d9e3fb;border-radius:8px;min-height:34px;padding:6px 9px}
+.manual-palette{margin:12px 0 8px;padding:10px;background:#f8faff;border:1px solid #dde5f6;border-radius:12px}
+.manual-palette h4{font-size:12px;margin:0 0 7px}
+.manual-palette details{border-top:1px solid #e1e7f0;padding:6px 0}
+.manual-palette details:first-of-type{border-top:0}
+.manual-palette summary{cursor:pointer;font-weight:650;font-size:12px;color:#304570;min-height:30px;display:flex;align-items:center}
+.manual-palette .key-desc{color:#7b8aa4;font-size:11px;font-weight:400;margin-left:6px}
+.manual-palette .symbols-wrap{display:flex;flex-wrap:wrap;gap:5px;padding:5px 0 9px}
+.manual-palette .symbols-wrap button{font:18px Georgia,"Noto Serif JP",serif;background:white;border:1px solid #cbd7ec;color:#233452;min-width:40px;min-height:40px;padding:5px 8px;border-radius:8px}
+.manual-palette .symbols-wrap button.snippet{font-size:13px;min-width:unset;background:#edf2ff}
+.manual-palette .symbols-wrap button:active{background:#d5e2ff}
+
 .manual-warning{margin:8px 0;color:#955b12;font-size:12px;line-height:1.6}
 .manual-only{display:none}
 body.manual-active .manual-only{display:block}
@@ -29,7 +40,7 @@ body.manual-active .auto-only{display:none}
 <section class="panel"><h2 class="section-title">① 証明するシークエントを入力</h2><div class="field-row"><input id="goal" type="text" value="(A⊃B)∧(A⊃C)→A⊃(B∧C)" spellcheck="false" autocomplete="off" aria-label="証明目標"><button class="btn primary" id="start">開始</button></div><div class="keypad" id="keys"></div><div class="hint">式の区切りは「,」、シークエントは「→」、含意は「⊃」です。手動モードなら任意の文字や記号も入力できます。</div><div class="samples"><button class="sample" data-example="A∧B→B∧A">∧の交換</button><button class="sample" data-example="→A⊃(B⊃A)">weakening</button><button class="sample" data-example="A⊃B,¬B→¬A">対偶</button><button class="sample" data-example="(A⊃B)∧(A⊃C)→A⊃(B∧C)">前回の問題</button></div><div class="error" id="error" role="alert"></div></section>
 <section class="panel"><h2 class="section-title">② 証明図を組み立てる</h2><div class="toolbar"><span class="stat" id="stat"></span><button class="btn tiny ghost" id="undo">元に戻す</button><button class="btn tiny ghost" id="svgExport">SVG保存</button><button class="btn tiny ghost" id="latexExport">LaTeXコピー</button></div><div class="canvas-scroll" id="canvas"><div class="tree" id="tree"></div></div><p class="hint" style="margin:9px 2px 0">未証明の枝をタップしてください。自動モードでは式を選んで規則を適用し、手動モードでは上段と規則名を直接入力できます。横に広い証明図はスクロールできます。</p></section>
 <section class="panel auto-only"><h2 class="section-title">③ 選んだ式に規則を適用</h2><div class="rule-panel"><div class="rule-head"><span class="selection-text" id="selection">式を選んでください。</span><button class="btn tiny" id="closeAxiom" style="display:none">始式 A→A</button></div><div class="rule-chips" id="rules"></div></div><div class="note" style="margin-top:11px">教科書に合わせ、論理規則は左側の先頭・右側の末尾に適用します。途中の式にはexchangeで移動させてください。∧左1・∧左2、∨右1・∨右2、weakening、contractionも区別しています。規則を逆向きに選んでも、証明が完成するまでは前提は未証明です。<br>※ 初版は命題論理のみです。cutと量化規則はまだありません。</div></section>
-<section class="panel manual-only"><h2 class="section-title">③ 手動で証明図を編集</h2><p class="hint">証明図の未完成の枝を選択し、規則名と上段のシークエントを自由に配置します。推論規則の妥当性は自動判定しません。</p><p class="selection-text" id="manualSelection"></p><div class="manual-actions" style="margin-top:10px"><button class="btn primary" id="manualAdd">上段と規則名を入力</button><button class="btn" id="manualEdit">この式を編集</button></div><p class="manual-warning">手動で完成した図は、形式的な正しさが検証された証明とは区別されます。</p></section>
+<section class="panel manual-only"><h2 class="section-title">③ 手動で証明図を編集</h2><p class="hint">証明図の未完成の枝を選択し、規則名と上段のシークエントを自由に配置します。全記号をカテゴリ別パレットからタップ入力できます。推論規則の妥当性は自動判定しません。</p><p class="selection-text" id="manualSelection"></p><div class="manual-actions" style="margin-top:10px"><button class="btn primary" id="manualAdd">上段と規則名を入力</button><button class="btn" id="manualEdit">この式を編集</button></div><p class="manual-warning">手動で完成した図は、形式的な正しさが検証された証明とは区別されます。</p></section>
 <div class="footer">端末内で動く単一HTMLファイルです。証明の編集中データはブラウザ内に保存しますが、ファイル閲覧アプリによっては保存されない場合があります。SVG保存またはLaTeXコピーで成果を残せます。</div>
 </main><div id="modalRoot"></div><div id="toast" role="status"></div>
 <script>
@@ -105,12 +116,60 @@ const r=layout(root);const parts=[];function draw(x,y,l){const base=x+l.w/2,seqY
 draw(24,20,r);const w=Math.ceil(r.w+48),h=Math.ceil(r.h+48);const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><rect width="100%" height="100%" fill="white"/>'+parts.join('')+'</svg>';const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='LK-proof.svg';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('SVGを保存しました')}
 
 const ruleNames=['始式','∧左1','∧左2','∧右','∨左','∨右1','∨右2','⊃左','⊃右','¬左','¬右','weakening 左','weakening 右','contraction 左','contraction 右','exchange 左','exchange 右','cut','その他（自由入力）'];
-const snippets=['A→A','B→B','C→C','A,B→C','A⊃B','A∧B','A∨B','¬A','Γ→Δ','→A','A→'];
+// 常用の論理記号と、証明・集合論で使う拡張記号を分類します。
+const symbolGroups=[
+ {name:'命題変数（大文字）',note:'A～Z',items:[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ']},
+ {name:'論理結合子・真理値',note:'LKで主に使用',items:['¬','∧','∨','⊃','↔','⇔','⇒','⊕','↑','↓','⊤','⊥']},
+ {name:'シークエント・導出',note:'区切りと証明可能性',items:['→','⊢','⊬','⊣','⊨','⊭','≡','≢','∴','∵']},
+ {name:'量化・項',note:'一階述語論理など',items:['∀','∃','∄','∃!','ι','ε','λ','μ']},
+ {name:'小文字・変数',note:'x, y, zなど',items:[...'abcdefghijklmnopqrstuvwxyz']},
+ {name:'ギリシャ文字',note:'文脈・式のメタ変数',items:['Γ','Δ','Θ','Λ','Ξ','Π','Σ','Φ','Ψ','Ω','α','β','γ','δ','ε','ζ','η','θ','λ','μ','ν','ξ','π','ρ','σ','τ','φ','χ','ψ','ω']},
+ {name:'集合・関係',note:'集合論で使う記号',items:['∈','∉','∋','∅','∩','∪','⊂','⊆','⊄','⊇','⊃','×','=','≠','≤','≥','≈','≅','∼','∞']},
+ {name:'括弧・区切り',note:'式の構築',items:['(',')','[',']','{','}',',',';',';',':','.','|','/','_','′','…']},
+ {name:'シークエントの定型',note:'よく使う形を一度で入力',items:['A→A','B→B','C→C','A,B→C','A⊃B','A∧B','A∨B','¬A','Γ→Δ','Γ,A→Δ','Γ→Δ,A','A,Γ→Δ','Γ→Δ,A']}
+];
 function makeManualNode(source){const val=source.trim();let parsed=null;try{parsed=parseSequent(val)}catch(e){}const node=newNode(parsed?.left??[],parsed?.right??[]);node.manual=true;if(!parsed)node.manualSeq=val;return node}
 function makeModal(title){const back=document.createElement('div');back.className='modal-back';const panel=document.createElement('div');panel.className='modal';const head=document.createElement('h3');head.textContent=title;panel.append(head);back.append(panel);back.addEventListener('click',e=>{if(e.target===back)back.remove()});$('modalRoot').append(back);return {back,panel}}
 function makeManualInput(value,label,host){const wrap=document.createElement('div');wrap.className='manual-field';const lab=document.createElement('label');lab.textContent=label;const input=document.createElement('input');input.type='text';input.value=value;input.spellcheck=false;input.autocomplete='off';wrap.append(lab,input);host.append(wrap);return input}
-function addManualPad(panel, getTarget){const info=document.createElement('p');info.className='hint';info.textContent='入力欄を選択して、記号や候補をタップしてください。';panel.append(info);const pad=document.createElement('div');pad.className='manual-pad';for(const s of ['A','B','C','D','P','Q','R','Γ','Δ','¬','∧','∨','⊃','→','(',')',',']){const b=document.createElement('button');b.type='button';b.textContent=s;b.onclick=()=>insertManual(s);pad.append(b)}panel.append(pad);const sn=document.createElement('div');sn.className='manual-snippets';for(const s of snippets){const b=document.createElement('button');b.type='button';b.textContent=s;b.onclick=()=>insertManual(s);sn.append(b)}panel.append(sn);
-function insertManual(v){const target=getTarget();if(!target)return;const pos=target.selectionStart??target.value.length,end=target.selectionEnd??pos;target.value=target.value.slice(0,pos)+v+target.value.slice(end);target.focus();target.setSelectionRange(pos+v.length,pos+v.length)}
+function addManualPad(panel,getTarget){
+ const palette=document.createElement('div');palette.className='manual-palette';
+ const title=document.createElement('h4');title.textContent='記号パレット（タップで挿入）';palette.append(title);
+ const info=document.createElement('p');info.className='hint';info.textContent='上段の入力欄をタップしてから記号を選んでください。カテゴリを開くと全記号を使えます。';palette.append(info);
+ let caretTarget=null,caretStart=0,caretEnd=0;
+ const record=input=>{if(!input)return;caretTarget=input;caretStart=input.selectionStart??input.value.length;caretEnd=input.selectionEnd??caretStart};
+ // タップで入力欄のフォーカスが外れても、直前のカーソル位置へ挿入します。
+ panel.addEventListener('focusin',e=>{if(e.target?.tagName==='INPUT')record(e.target)});
+ panel.addEventListener('keyup',e=>{if(e.target?.tagName==='INPUT')record(e.target)});
+ panel.addEventListener('click',e=>{if(e.target?.tagName==='INPUT')record(e.target)});
+ function insert(v){
+   const target=(caretTarget&&caretTarget.isConnected?caretTarget:null)??getTarget();
+   if(!target){toast('先に入力欄を追加してください');return}
+   const begin=(target===caretTarget?caretStart:target.selectionStart??target.value.length);
+   const end=(target===caretTarget?caretEnd:target.selectionEnd??begin);
+   target.value=target.value.slice(0,begin)+v+target.value.slice(end);
+   target.focus();
+   const newPos=begin+v.length;target.setSelectionRange(newPos,newPos);
+   record(target);
+ }
+ for(const [index,group] of symbolGroups.entries()){
+  const section=document.createElement('details');
+  section.open=index===1||index===2||index===8;
+  const summary=document.createElement('summary');
+  summary.append(document.createTextNode(group.name));
+  const note=document.createElement('span');note.className='key-desc';note.textContent='('+group.note+')';summary.append(note);section.append(summary);
+  const wrap=document.createElement('div');wrap.className='symbols-wrap';
+  for(const value of group.items){
+    const button=document.createElement('button');button.type='button';button.textContent=value;
+    button.className=value.length>2?'snippet':'';
+    button.setAttribute('aria-label',value+' を挿入');
+    // iOSで記号ボタンを押した際にも編集対象を維持します。
+    button.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')e.preventDefault()});
+    button.addEventListener('click',()=>insert(value));
+    wrap.append(button)
+  }
+  section.append(wrap);palette.append(section)
+ }
+ panel.append(palette)
 }
 function modalFooter(panel,back,onSave){const footer=document.createElement('div');footer.className='modal-footer';const cancel=document.createElement('button');cancel.className='btn';cancel.textContent='キャンセル';cancel.onclick=()=>back.remove();const save=document.createElement('button');save.className='btn primary';save.textContent='反映';save.onclick=onSave;footer.append(cancel,save);panel.append(footer)}
 function editManual(){const n=find(root,current);if(!n||n.rule)return;const {back,panel}=makeModal('シークエントを編集');const input=makeManualInput(textSeq(n),'文字や記号を自由に入力できます',panel);addManualPad(panel,()=>input);modalFooter(panel,back,()=>{if(!input.value.trim()){toast('シークエントを入力してください');return}snapshot();const next=makeManualNode(input.value);n.left=next.left;n.right=next.right;n.manualSeq=next.manualSeq;n.manual=true;selected=null;back.remove();persist();render()});input.focus()}
