@@ -53,14 +53,131 @@ const symbols=['A','B','C','D','P','Q','R','¬','∧','∨','⊃','→','(',')',
 const keys=$('keys');
 function insertGoalSymbol(s){const x=$('goal'),i=x.selectionStart??x.value.length,j=x.selectionEnd??i;x.value=x.value.slice(0,i)+s+x.value.slice(j);x.focus();x.setSelectionRange(i+s.length,i+s.length)}
 symbols.forEach(s=>{const b=document.createElement('button');b.className='key';b.textContent=s;b.type='button';b.addEventListener('click',()=>insertGoalSymbol(s));keys.append(b)});
-let root=null, current=null, selected=null, nextId=1, history=[], mode='auto';
+let root=null, current=null, selected=null, nextId=1, history=[], mode='auto', logic='prop', workspaces={};
+const LOGIC_DEFAULTS={prop:'(A⊃B)∧(A⊃C)→A⊃(B∧C)',predicate:'∀x P(x)→P(a)'};
 const EXAMPLES=['A∧B→B∧A','→A⊃(B⊃A)','A⊃B,¬B→¬A'];
 function tokenize(str){const arr=[];let i=0;while(i<str.length){const rest=str.slice(i),c=str[i];if(/\s/.test(c)){i++;continue}let val=null,adv=1;if(rest.startsWith('&&')){val='∧';adv=2}else if(rest.startsWith('||')){val='∨';adv=2}else if(rest.startsWith('=>')||rest.startsWith('->')){val='⊃';adv=2}else if(c==='&')val='∧';else if(c==='|' )val='∨';else if(c==='!'||c==='~')val='¬';else if('¬∧∨⊃()'.includes(c))val=c;else{const m=rest.match(/^[A-Za-z][A-Za-z0-9_]*/);if(m){val=m[0];adv=val.length}else throw Error('論理式に使えない文字があります: '+c)}arr.push(val);i+=adv}return arr}
-function parseFormula(src){const t=tokenize(src);let p=0;const take=v=>t[p]===v?(p++,true):false;function atom(){if(take('¬'))return {k:'not',a:atom()};if(take('(')){const v=imp();if(!take(')'))throw Error('閉じ括弧 ) が足りません');return v}const v=t[p++];if(!v||['∧','∨','⊃',')'].includes(v))throw Error('式が途中で終わっています');return {k:'atom',v}}function and(){let a=atom();while(take('∧'))a={k:'and',a,b:atom()};return a}function or(){let a=and();while(take('∨'))a={k:'or',a,b:and()};return a}function imp(){let a=or();if(take('⊃'))a={k:'imp',a,b:imp()};return a}const res=imp();if(p!==t.length)throw Error('式を解釈できません: '+t.slice(p).join(''));return res}
+
+function folLex(source){
+ const out=[];let i=0;
+ while(i<source.length){
+  const rest=source.slice(i),ch=source[i];
+  if(/\s/.test(ch)){i++;continue}
+  if(rest.startsWith('&&')){out.push('∧');i+=2;continue}
+  if(rest.startsWith('||')){out.push('∨');i+=2;continue}
+  if(rest.startsWith('=>')||rest.startsWith('->')){out.push('⊃');i+=2;continue}
+  if('¬∧∨⊃∀∃()=,.'.includes(ch)){out.push(ch);i++;continue}
+  if(ch==='!'||ch==='~'){out.push('¬');i++;continue}
+  if(ch==='&'||ch==='|'){out.push(ch==='&'?'∧':'∨');i++;continue}
+  const m=rest.match(/^(?:[A-Za-z][A-Za-z0-9_]*|[0-9]+)/);
+  if(!m)throw Error('述語論理の式に使えない文字があります: '+ch);
+  out.push(m[0]);i+=m[0].length;
+ }
+ return out;
+}
+function parseFOL(source,asTerm=false){
+ const t=folLex(source);let p=0;
+ const take=v=>t[p]===v?(p++,true):false;
+ const ident=v=>/^(?:[A-Za-z][A-Za-z0-9_]*|[0-9]+)$/.test(v??'');
+ function term(){
+  const name=t[p];if(!ident(name))throw Error('項の名前が必要です: '+String(name??'式の末尾'));p++;
+  if(take('(')){
+   const args=[];
+   if(!take(')')){do{args.push(term())}while(take(','));if(!take(')'))throw Error('項の閉じ括弧 ) が足りません')}
+   return {t:'fn',name,args};
+  }
+  return {t:'var',name};
+ }
+ function unary(){
+  if(take('¬'))return {k:'not',a:unary()};
+  if(t[p]==='∀'||t[p]==='∃'){
+   const k=t[p++]==='∀'?'forall':'exists',v=t[p++];
+   if(!/^[A-Za-z][A-Za-z0-9_]*$/.test(v??''))throw Error('量化記号の直後に変数名が必要です');
+   take('.');
+   return {k,v,a:unary()};
+  }
+  if(take('(')){const f=imp();if(!take(')'))throw Error('閉じ括弧 ) が足りません');return f}
+  const a=term();
+  if(take('='))return {k:'eq',a,b:term()};
+  return {k:'pred',name:a.name,args:a.t==='fn'?a.args:[]};
+ }
+ function and(){let a=unary();while(take('∧'))a={k:'and',a,b:unary()};return a}
+ function or(){let a=and();while(take('∨'))a={k:'or',a,b:and()};return a}
+ function imp(){let a=or();if(take('⊃'))a={k:'imp',a,b:imp()};return a}
+ const f=asTerm?term():imp();
+ if(p!==t.length)throw Error('式を解釈できません: '+t.slice(p).join(''));
+ return f;
+}
+function fmtTerm(t){return t.t==='fn'?t.name+'('+t.args.map(fmtTerm).join(',')+')':t.name}
+function termFreeNames(t,set=new Set()){
+ if(t.t==='fn')t.args.forEach(a=>termFreeNames(a,set));
+ else if(!/^[0-9]+$/.test(t.name))set.add(t.name);
+ return set;
+}
+function formulaFreeNames(f,bound=new Set(),set=new Set()){
+ if(f.k==='pred')f.args.forEach(a=>{for(const v of termFreeNames(a))if(!bound.has(v))set.add(v)});
+ else if(f.k==='eq')for(const t of [f.a,f.b])for(const v of termFreeNames(t))if(!bound.has(v))set.add(v);
+ else if(f.k==='forall'||f.k==='exists')formulaFreeNames(f.a,new Set([...bound,f.v]),set);
+ else if(f.k==='not')formulaFreeNames(f.a,bound,set);
+ else if(f.k==='and'||f.k==='or'||f.k==='imp'){formulaFreeNames(f.a,bound,set);formulaFreeNames(f.b,bound,set)}
+ return set;
+}
+function allTermNames(t,set){if(t.t==='fn')t.args.forEach(x=>allTermNames(x,set));else set.add(t.name)}
+function allFormulaNames(f,set){
+ if(f.k==='pred')f.args.forEach(t=>allTermNames(t,set));
+ else if(f.k==='eq'){allTermNames(f.a,set);allTermNames(f.b,set)}
+ else if(f.k==='forall'||f.k==='exists'){set.add(f.v);allFormulaNames(f.a,set)}
+ else if(f.k==='not')allFormulaNames(f.a,set);
+ else if(f.k==='and'||f.k==='or'||f.k==='imp'){allFormulaNames(f.a,set);allFormulaNames(f.b,set)}
+}
+function renameTerm(t,from,to){
+ if(t.t==='fn')return {...t,args:t.args.map(a=>renameTerm(a,from,to))};
+ return t.name===from?{...t,name:to}:t;
+}
+function renameBoundInBody(f,from,to){
+ if(f.k==='forall'||f.k==='exists'){
+  if(f.v===from)return f;
+  return {...f,a:renameBoundInBody(f.a,from,to)};
+ }
+ if(f.k==='pred')return {...f,args:f.args.map(t=>renameTerm(t,from,to))};
+ if(f.k==='eq')return {...f,a:renameTerm(f.a,from,to),b:renameTerm(f.b,from,to)};
+ if(f.k==='not')return {...f,a:renameBoundInBody(f.a,from,to)};
+ if(f.k==='and'||f.k==='or'||f.k==='imp')return {...f,a:renameBoundInBody(f.a,from,to),b:renameBoundInBody(f.b,from,to)};
+ return f;
+}
+function substTerm(node,from,replacement){
+ if(node.t==='fn')return {...node,args:node.args.map(t=>substTerm(t,from,replacement))};
+ return node.name===from?clone(replacement):node;
+}
+function substFormula(f,from,replacement){
+ if(f.k==='pred')return {...f,args:f.args.map(t=>substTerm(t,from,replacement))};
+ if(f.k==='eq')return {...f,a:substTerm(f.a,from,replacement),b:substTerm(f.b,from,replacement)};
+ if(f.k==='not')return {...f,a:substFormula(f.a,from,replacement)};
+ if(f.k==='forall'||f.k==='exists'){
+  if(f.v===from)return f;
+  let variable=f.v,body=f.a;
+  if(termFreeNames(replacement).has(variable)&&formulaFreeNames(body,new Set([variable])).has(from)){
+   const avoid=new Set([from,...termFreeNames(replacement)]);allFormulaNames(body,avoid);
+   let num=1,candidate=variable+num;
+   while(avoid.has(candidate))candidate=variable+(++num);
+   body=renameBoundInBody(body,variable,candidate);variable=candidate;
+  }
+  return {...f,v:variable,a:substFormula(body,from,replacement)};
+ }
+ if(f.k==='and'||f.k==='or'||f.k==='imp')return {...f,a:substFormula(f.a,from,replacement),b:substFormula(f.b,from,replacement)};
+ return f;
+}
+function freshEigenName(node){
+ const used=new Set();[...node.left,...node.right].forEach(f=>formulaFreeNames(f,new Set(),used));
+ for(const x of ['a','b','c','u','v','w','z','a1','a2','a3'])if(!used.has(x))return x;
+ let i=4;while(used.has('a'+i))i++;return 'a'+i;
+}
+
+function parseFormula(src){if(logic==='predicate')return parseFOL(src);const t=tokenize(src);let p=0;const take=v=>t[p]===v?(p++,true):false;function atom(){if(take('¬'))return {k:'not',a:atom()};if(take('(')){const v=imp();if(!take(')'))throw Error('閉じ括弧 ) が足りません');return v}const v=t[p++];if(!v||['∧','∨','⊃',')'].includes(v))throw Error('式が途中で終わっています');return {k:'atom',v}}function and(){let a=atom();while(take('∧'))a={k:'and',a,b:atom()};return a}function or(){let a=and();while(take('∨'))a={k:'or',a,b:and()};return a}function imp(){let a=or();if(take('⊃'))a={k:'imp',a,b:imp()};return a}const res=imp();if(p!==t.length)throw Error('式を解釈できません: '+t.slice(p).join(''));return res}
 function seqParts(text){let depth=0,parts=[],last=0;for(let i=0;i<text.length;i++){const c=text[i];if(c==='(')depth++;if(c===')')depth--;if(depth<0)throw Error('括弧の対応が取れていません');if(c===','&&depth===0){parts.push(text.slice(last,i));last=i+1}}if(depth!==0)throw Error('括弧の対応が取れていません');parts.push(text.slice(last));if(parts.length===1&&parts[0].trim()==='')return [];if(parts.some(x=>!x.trim()))throw Error('空の論理式が含まれています');return parts.map(parseFormula)}
 function parseSequent(text){const s=text.split('→');if(s.length!==2)throw Error('シークエントの区切りには → を一つ入力してください（含意は ⊃ です）');return {left:seqParts(s[0]),right:seqParts(s[1])}}
-function precedence(f){return {atom:4,not:3,and:2,or:1,imp:0}[f.k]}
-function fmt(f,parent=-1,isLeft=false){let r='',p=precedence(f);if(f.k==='atom')r=f.v;else if(f.k==='not')r='¬'+fmt(f.a,p);else{const op={and:'∧',or:'∨',imp:'⊃'}[f.k];r=fmt(f.a,p,true)+op+fmt(f.b,p,false)}return p<parent||(p===parent&&isLeft&&f.k==='imp')?'('+r+')':r}
+function precedence(f){return {atom:4,pred:4,eq:4,not:3,forall:3,exists:3,and:2,or:1,imp:0}[f.k]}
+function fmt(f,parent=-1,isLeft=false){let r='',p=precedence(f);if(f.k==='atom')r=f.v;else if(f.k==='pred')r=f.name+(f.args.length?'('+f.args.map(fmtTerm).join(',')+')':'');else if(f.k==='eq')r=fmtTerm(f.a)+'='+fmtTerm(f.b);else if(f.k==='not')r='¬'+fmt(f.a,p);else if(f.k==='forall'||f.k==='exists')r=(f.k==='forall'?'∀':'∃')+f.v+' '+fmt(f.a,p);else{const op={and:'∧',or:'∨',imp:'⊃'}[f.k];r=fmt(f.a,p,true)+op+fmt(f.b,p,false)}return p<parent||(p===parent&&isLeft&&f.k==='imp')?'('+r+')':r}
 function equal(a,b){return JSON.stringify(a)===JSON.stringify(b)}
 function textSeq(n){return n.manualSeq!=null?n.manualSeq:n.left.map(f=>fmt(f)).join(', ')+' → '+n.right.map(f=>fmt(f)).join(', ')}
 function newNode(l,r){return {id:nextId++,left:l,right:r,rule:null,children:[],closed:false}}
