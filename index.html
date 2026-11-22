@@ -37,12 +37,13 @@ body.manual-active .manual-only{display:block}
 body.manual-active .auto-only{display:none}
 </style></head>
 <body>
-<header><div class="eyebrow">PROPOSITIONAL SEQUENT CALCULUS</div><h1>LK Proof Pad</h1><p>証明したい式から上へ進む、スマホ向けのLK証明木エディタです。</p></header>
+<header><div class="eyebrow">SEQUENT CALCULUS</div><h1>LK Proof Pad</h1><p>証明したい式から上へ進む、スマホ向けのLK証明木エディタです。</p></header>
 <main class="layout">
+<section class="panel"><h2 class="section-title">論理体系</h2><div class="mode-toggle" role="group" aria-label="論理体系"><button class="btn active" type="button" id="logicProp" aria-pressed="true">命題論理</button><button class="btn" type="button" id="logicPredicate" aria-pressed="false">述語論理</button></div><p class="hint" id="logicHelp">命題論理のLKを使用します。</p></section>
 <section class="panel"><h2 class="section-title">操作モード</h2><div class="mode-toggle" role="group" aria-label="操作モード"><button class="btn active" type="button" id="modeAuto" aria-pressed="true">自動モード</button><button class="btn" type="button" id="modeManual" aria-pressed="false">手動モード</button></div><p class="hint" id="modeHelp">推論規則を選ぶと上段を自動生成します。</p></section>
-<section class="panel"><h2 class="section-title">① 証明するシークエントを入力</h2><div class="field-row"><input id="goal" type="text" value="(A⊃B)∧(A⊃C)→A⊃(B∧C)" spellcheck="false" autocomplete="off" aria-label="証明目標"><button class="btn tiny ghost" type="button" id="clearGoal" aria-label="入力欄をクリア">クリア</button><button class="btn primary" id="start">開始</button></div><div class="keypad" id="keys"></div><div class="hint">式の区切りは「,」、シークエントは「→」、含意は「⊃」です。手動モードなら任意の文字や記号も入力できます。</div><div class="samples"><button class="sample" data-example="A∧B→B∧A">∧の交換</button><button class="sample" data-example="→A⊃(B⊃A)">weakening</button><button class="sample" data-example="A⊃B,¬B→¬A">対偶</button><button class="sample" data-example="(A⊃B)∧(A⊃C)→A⊃(B∧C)">前回の問題</button></div><div class="error" id="error" role="alert"></div></section>
+<section class="panel"><h2 class="section-title">① 証明するシークエントを入力</h2><div class="field-row"><input id="goal" type="text" value="(A⊃B)∧(A⊃C)→A⊃(B∧C)" spellcheck="false" autocomplete="off" aria-label="証明目標"><button class="btn tiny ghost" type="button" id="clearGoal" aria-label="入力欄をクリア">クリア</button><button class="btn primary" id="start">開始</button></div><div class="keypad" id="keys"></div><div class="hint">式の区切りは「,」、シークエントは「→」、含意は「⊃」です。<span id="syntaxHelp">手動モードなら任意の文字や記号も入力できます。</span></div><div class="samples"><button class="sample" data-logic="prop" data-example="A∧B→B∧A">∧の交換</button><button class="sample" data-logic="prop" data-example="→A⊃(B⊃A)">weakening</button><button class="sample" data-logic="prop" data-example="A⊃B,¬B→¬A">対偶</button><button class="sample" data-logic="prop" data-example="(A⊃B)∧(A⊃C)→A⊃(B∧C)">前回の問題</button><button class="sample" data-logic="predicate" data-example="∀x P(x)→P(a)">全称除去</button><button class="sample" data-logic="predicate" data-example="P(a)→∃x P(x)">存在導入</button><button class="sample" data-logic="predicate" data-example="∀x(P(x)⊃Q(x)),∀x P(x)→∀x Q(x)">量化の含意</button></div><div class="error" id="error" role="alert"></div></section>
 <section class="panel"><h2 class="section-title">② 証明図を組み立てる</h2><div class="toolbar"><span class="stat" id="stat"></span><button class="btn tiny ghost" id="undo">元に戻す</button><button class="btn tiny ghost" id="svgExport">SVG保存</button><button class="btn tiny ghost" id="latexExport">LaTeXコピー</button></div><div class="canvas-scroll" id="canvas"><div class="tree" id="tree"></div></div><p class="hint" style="margin:9px 2px 0">未証明の枝をタップしてください。自動モードでは式を選んで規則を適用し、手動モードでは上段と規則名を直接入力できます。横に広い証明図はスクロールできます。</p></section>
-<section class="panel auto-only"><h2 class="section-title">③ 選んだ式に規則を適用</h2><div class="rule-panel"><div class="rule-head"><span class="selection-text" id="selection">式を選んでください。</span><button class="btn tiny" id="closeAxiom" style="display:none">始式 A→A</button></div><div class="rule-chips" id="rules"></div></div><div class="note" style="margin-top:11px">教科書に合わせ、論理規則は左側の先頭・右側の末尾に適用します。途中の式にはexchangeで移動させてください。∧左1・∧左2、∨右1・∨右2、weakening、contractionも区別しています。規則を逆向きに選んでも、証明が完成するまでは前提は未証明です。<br>※ 初版は命題論理のみです。cutと量化規則はまだありません。</div></section>
+<section class="panel auto-only"><h2 class="section-title">③ 選んだ式に規則を適用</h2><div class="rule-panel"><div class="rule-head"><span class="selection-text" id="selection">式を選んでください。</span><button class="btn tiny" id="closeAxiom" style="display:none">始式 A→A</button></div><div class="rule-chips" id="rules"></div></div><div class="note" style="margin-top:11px" id="ruleNotice">教科書に合わせ、論理規則は左側の先頭・右側の末尾に適用します。途中の式にはexchangeで移動させてください。</div></section>
 <section class="panel manual-only"><h2 class="section-title">③ 手動で証明図を編集</h2><p class="hint">証明図の未完成の枝を選択し、規則名と上段のシークエントを自由に配置します。全記号をカテゴリ別パレットからタップ入力できます。推論規則の妥当性は自動判定しません。</p><p class="selection-text" id="manualSelection"></p><div class="manual-actions" style="margin-top:10px"><button class="btn primary" id="manualAdd">上段と規則名を入力</button><button class="btn" id="manualEdit">この式を編集</button></div><p class="manual-warning">手動で完成した図は、形式的な正しさが検証された証明とは区別されます。</p></section>
 <div class="footer">端末内で動く単一HTMLファイルです。証明の編集中データはブラウザ内に保存しますが、ファイル閲覧アプリによっては保存されない場合があります。SVG保存またはLaTeXコピーで成果を残せます。</div>
 </main><div id="modalRoot"></div><div id="toast" role="status"></div>
@@ -50,9 +51,11 @@ body.manual-active .auto-only{display:none}
 (function(){'use strict';
 const $=id=>document.getElementById(id);
 const symbols=['A','B','C','D','P','Q','R','¬','∧','∨','⊃','→','(',')',',','Γ','Δ'];
+const predicateSymbols=['∀','∃','x','y','z','a','P(x)','Q(x)','='];
 const keys=$('keys');
 function insertGoalSymbol(s){const x=$('goal'),i=x.selectionStart??x.value.length,j=x.selectionEnd??i;x.value=x.value.slice(0,i)+s+x.value.slice(j);x.focus();x.setSelectionRange(i+s.length,i+s.length)}
 symbols.forEach(s=>{const b=document.createElement('button');b.className='key';b.textContent=s;b.type='button';b.addEventListener('click',()=>insertGoalSymbol(s));keys.append(b)});
+predicateSymbols.forEach(s=>{const b=document.createElement('button');b.className='key';b.textContent=s;b.type='button';b.dataset.predicateOnly='true';b.hidden=true;b.addEventListener('click',()=>insertGoalSymbol(s));keys.append(b)});
 let root=null, current=null, selected=null, nextId=1, history=[], mode='auto', logic='prop', workspaces={};
 const LOGIC_DEFAULTS={prop:'(A⊃B)∧(A⊃C)→A⊃(B∧C)',predicate:'∀x P(x)→P(a)'};
 const EXAMPLES=['A∧B→B∧A','→A⊃(B⊃A)','A⊃B,¬B→¬A'];
@@ -184,11 +187,18 @@ function newNode(l,r){return {id:nextId++,left:l,right:r,rule:null,children:[],c
 function clone(x){return JSON.parse(JSON.stringify(x))}
 function find(n,id){if(!n)return null;if(n.id===id)return n;for(const c of n.children){const f=find(c,id);if(f)return f}return null}
 function leaves(n){if(!n)return [];if(n.closed)return [];if(!n.rule)return [n];return n.children.flatMap(leaves)}
-function persist(){try{localStorage.setItem('lk-proof-pad-v1',JSON.stringify({root,nextId,mode}))}catch(e){}}
+function persist(){try{workspaces[logic]={root:clone(root),nextId,mode,goal:$('goal').value};localStorage.setItem('lk-proof-pad-v2',JSON.stringify({logic,workspaces}))}catch(e){}}
 function snapshot(){history.push({root:clone(root),nextId,selected:clone(selected)});if(history.length>80)history.shift()}
 function toast(text){const a=$('toast');a.textContent=text;a.classList.add('visible');setTimeout(()=>a.classList.remove('visible'),1700)}
 function start(s){let seq;try{seq=parseSequent(s)}catch(e){if(mode!=='manual'){$('error').textContent=e.message;return}seq=null}if(!s.trim()){$('error').textContent='式を入力してください';return}$('error').textContent='';nextId=1;root=seq?newNode(seq.left,seq.right):newNode([],[]);if(!seq){root.manualSeq=s.trim();root.manual=true}selected=null;current=root.id;history=[];persist();render()}
-function snapshotMaybe(){}
+function switchLogic(next){
+ if(logic===next)return;
+ persist();logic=next;
+ const saved=workspaces[logic];
+ if(saved?.root){root=saved.root;nextId=saved.nextId??1;mode=saved.mode==='manual'?'manual':'auto';$('goal').value=saved.goal??textSeq(root)}
+ else{mode='auto';nextId=1;$('goal').value=LOGIC_DEFAULTS[logic];const parsed=parseSequent($('goal').value);root=newNode(parsed.left,parsed.right)}
+ selected=null;history=[];current=firstOpen()??root.id;$('error').textContent='';persist();render();
+}
 function markAxiom(){let n=find(root,current);if(!n||n.rule)return;if(n.manualSeq!=null||n.left.length!==1||n.right.length!==1||!equal(n.left[0],n.right[0]))return;snapshot();n.closed=true;n.rule='始式';selected=null;current=firstOpen()??n.id;persist();render();toast('始式を確定しました')}
 function firstOpen(){return leaves(root)[0]?.id??null}
 function change(apply){const n=find(root,current);if(!n||n.closed||n.rule)return;let made=apply(n);if(!made)return;snapshot();n.rule=made.label;n.children=made.goals.map(g=>newNode(g.left,g.right));selected=null;current=n.children[0]?.id??null;persist();render()}
@@ -200,11 +210,15 @@ if(isPrincipal){if(side==='left'){
  if(a.k==='or')arr.push(['∨左','∨左']);
  if(a.k==='imp')arr.push(['⊃左','⊃左']);
  if(a.k==='not')arr.push(['¬左','¬左']);
+  if(logic==='predicate'&&a.k==='forall')arr.push(['∀左','∀左']);
+  if(logic==='predicate'&&a.k==='exists')arr.push(['∃左','∃左']);
 }else{
  if(a.k==='and')arr.push(['∧右','∧右']);
  if(a.k==='or')arr.push(['∨右1','∨右1'],['∨右2','∨右2']);
  if(a.k==='imp')arr.push(['⊃右','⊃右']);
  if(a.k==='not')arr.push(['¬右','¬右']);
+  if(logic==='predicate'&&a.k==='forall')arr.push(['∀右','∀右']);
+  if(logic==='predicate'&&a.k==='exists')arr.push(['∃右','∃右']);
 }arr.push(['weakening','W'],['contraction','C'])}
 if(sel.i>0)arr.push(['exchange ←','XL']);
 if(sel.i<((side==='left'?n.left:n.right).length-1))arr.push(['exchange →','XR']);}
@@ -224,20 +238,60 @@ function applySimple(rule){const n=find(root,current);if(!n||!selected||selected
  if(rule==='XL'||rule==='XR'){let l=left,r=right,a=side==='left'?l:r,j=i+(rule==='XL'?-1:1);[a[i],a[j]]=[a[j],a[i]];result={label:'exchange '+(side==='left'?'左':'右'),goals:[s(l,r)]}}
  if(result)change(()=>result)
 }
+
+function applyQuantifier(rule){
+ const n=find(root,current),sel=selected;
+ if(logic!=='predicate'||!n||n.rule||!sel||sel.id!==n.id)return;
+ const side=sel.side,i=sel.i,leftSide=rule==='∀左'||rule==='∃左';
+ if(side!==(leftSide?'left':'right')||i!==(leftSide?0:n.right.length-1))return;
+ const f=(leftSide?n.left:n.right)[i],type=rule[0]==='∀'?'forall':'exists';
+ if(f.k!==type)return;
+ const eigen=rule==='∀右'||rule==='∃左';
+ const {back,panel}=makeModal(rule+'：'+(eigen?'固有変数を指定':'代入する項を指定'));
+ const desc=document.createElement('p');desc.className='hint';
+ desc.textContent=eigen?'結論のどの論理式にも自由に現れない新しい変数名を指定してください。':'量化された変数 '+f.v+' に代入する項を指定してください。f(a) などの関数項も使えます。';
+ panel.append(desc);
+ const field=makeManualInput(eigen?freshEigenName(n):'a',eigen?'固有変数':'代入項',panel);
+ const error=document.createElement('div');error.className='error';error.setAttribute('role','alert');panel.append(error);
+ modalFooter(panel,back,()=>{
+  try{
+   const term=parseFOL(field.value.trim(),true);
+   if(eigen){
+    if(term.t!=='var'||!/^[A-Za-z][A-Za-z0-9_]*$/.test(term.name))throw Error('固有変数には英字から始まる変数名を指定してください');
+    const free=new Set();[...n.left,...n.right].forEach(x=>formulaFreeNames(x,new Set(),free));
+    if(free.has(term.name))throw Error('固有変数 '+term.name+' は結論に自由に現れています。別の名前を指定してください');
+   }
+   const instantiated=substFormula(f.a,f.v,term),l=clone(n.left),r=clone(n.right);
+   if(leftSide)l.splice(i,1,instantiated);else r.splice(i,1,instantiated);
+   back.remove();change(()=>({label:rule+(eigen?' ('+term.name+')':''),goals:[{left:l,right:r}]}));
+  }catch(e){error.textContent=e.message}
+ });
+ field.focus();field.select();
+}
+
 function implicationSplit(){const n=find(root,current);const idx=selected.i,f=n.left[idx];const l=n.left.filter((_,j)=>j!==idx),r=n.right;const assignments=[...l.map((x,j)=>({where:'L',idx:j,formula:x,target:'one'})),...r.map((x,j)=>({where:'R',idx:j,formula:x,target:'two'}))];
 const backing=document.createElement('div');backing.className='modal-back';const modal=document.createElement('div');modal.className='modal';const h=document.createElement('h3');h.textContent='⊃左：残りの式を二つの前提へ分配';modal.append(h);const desc=document.createElement('p');desc.className='hint';desc.textContent='第1前提「Γ → Δ, '+fmt(f.a)+'」と第2前提「'+fmt(f.b)+', Π → Σ」のどちらに残すかを選びます。';modal.append(desc);
 if(!assignments.length){const p=document.createElement('p');p.className='hint';p.textContent='分配する式はありません。';modal.append(p)}for(const a of assignments){const row=document.createElement('div');row.className='assign-row';const lab=document.createElement('span');lab.className='formula';lab.textContent=(a.where==='L'?'左 : ':'右 : ')+fmt(a.formula);const select=document.createElement('select');[['one','第1前提'],['two','第2前提']].forEach(([v,t])=>{const option=document.createElement('option');option.value=v;option.textContent=t;select.append(option)});select.value=a.target;select.addEventListener('change',()=>a.target=select.value);row.append(lab,select);modal.append(row)}
 const footer=document.createElement('div');footer.className='modal-footer';const cancel=document.createElement('button');cancel.className='btn';cancel.textContent='戻る';cancel.onclick=()=>backing.remove();const go=document.createElement('button');go.className='btn primary';go.textContent='⊃左を適用';go.onclick=()=>{const oneL=[],twoL=[f.b],oneR=[],twoR=[];for(const a of assignments){const list=a.where==='L'?(a.target==='one'?oneL:twoL):(a.target==='one'?oneR:twoR);list.push(a.formula)}oneR.push(f.a);backing.remove();change(()=>({label:'⊃左',goals:[{left:oneL,right:oneR},{left:twoL,right:twoR}]}))};footer.append(cancel,go);modal.append(footer);backing.append(modal);backing.addEventListener('click',e=>{if(e.target===backing)backing.remove()});$('modalRoot').append(backing)}
-function render(){document.body.classList.toggle('manual-active',mode==='manual');$('modeAuto').classList.toggle('active',mode==='auto');$('modeManual').classList.toggle('active',mode==='manual');$('modeAuto').setAttribute('aria-pressed',String(mode==='auto'));$('modeManual').setAttribute('aria-pressed',String(mode==='manual'));$('modeHelp').textContent=mode==='auto'?'推論規則を選ぶと上段を自動生成します。':'上段の文字・記号・規則名を自由に入力します。規則の正しさは自動判定しません。';const canvas=$('canvas'),x=canvas.scrollLeft,y=canvas.scrollTop;const tree=$('tree');tree.replaceChildren(sequentNode(root));canvas.scrollLeft=x;canvas.scrollTop=y;const remaining=leaves(root).length;const anyManual=(function check(n){return !!n.manual||n.children.some(check)})(root);$('stat').innerHTML=remaining?'<strong>未完成 '+remaining+' 枝</strong>':anyManual?'<strong style="color:var(--green)">図が完成（未検証） ✓</strong>':'<strong style="color:var(--green)">証明完成 ✓</strong>';
-const n=find(root,current),sel=selected&&selected.id===n?.id?selected:null;$('manualSelection').textContent=n?'選択中: '+textSeq(n):'枝を選択してください';$('manualAdd').disabled=!n||!!n.rule;$('manualEdit').disabled=!n||!!n.rule;$('selection').textContent=sel?'選択: '+(sel.side==='left'?'左':'右')+' の '+fmt((sel.side==='left'?n.left:n.right)[sel.i]):n&&!n.rule?'このシークエントの論理式をタップしてください':'未証明の枝をタップしてください';$('closeAxiom').style.display=n&&!n.rule&&n.manualSeq==null&&n.left.length===1&&n.right.length===1&&equal(n.left[0],n.right[0])?'inline-block':'none';const box=$('rules');box.replaceChildren();const rules=ruleButtons(n);if(rules.length===0){const p=document.createElement('span');p.className='hint';p.textContent=n&&!n.rule?'式を選択すると適用できる規則が表示されます。':'枝を選んでください。';box.append(p)}else for(const [name,code] of rules){const b=document.createElement('button');b.className='rule-chip'+(['W','C','XL','XR'].includes(code)?' utility':'');b.textContent=name;b.onclick=()=>code==='⊃左'?implicationSplit():applySimple(code);box.append(b)}$('undo').disabled=history.length===0}
-function exportLatex(){function rec(n){let out='';for(const c of n.children)out+=rec(c);const s=textSeq(n).replace(/¬/g,'\\neg ').replace(/∧/g,'\\land ').replace(/∨/g,'\\lor ').replace(/⊃/g,'\\supset ').replace(/→/g,'\\to ');const name=n.rule? n.rule.replace(/∧/g,'\\land ').replace(/∨/g,'\\lor ').replace(/⊃/g,'\\supset ').replace(/¬/g,'\\neg '):'?';if(n.closed)return out+'\\AxiomC{$'+s+'$}\n';if(!n.children.length)return out+'\\AxiomC{$\\text{未証明: } '+s+'$}\n';return out+'\\RightLabel{\\scriptsize '+name+'}\n'+(n.children.length===2?'\\BinaryInfC':'\\UnaryInfC')+'{$'+s+'$}\n'}return '\\begin{prooftree}\n'+rec(root)+'\\end{prooftree}\n'}
+function render(){
+ document.body.classList.toggle('predicate-active',logic==='predicate');
+ for(const [id,active] of [['logicProp',logic==='prop'],['logicPredicate',logic==='predicate']]){$(id).classList.toggle('active',active);$(id).setAttribute('aria-pressed',String(active))}
+ document.querySelectorAll('.sample').forEach(b=>{b.hidden=b.dataset.logic!==logic});
+ document.querySelectorAll('[data-predicate-only]').forEach(b=>{b.hidden=logic!=='predicate'});
+ $('logicHelp').textContent=logic==='predicate'?'一階述語論理のLKです。量化規則では代入項と固有変数条件を扱います。命題論理側の証明図も保持します。':'命題論理のLKです。従来の証明図と操作方法を利用できます。';
+ $('syntaxHelp').textContent=logic==='predicate'?'述語は P(x), R(x,y)、関数項は f(x)、量化は ∀x P(x), ∃x (P(x)∧Q(x)) のように入力します。量化の範囲には括弧を使ってください。':'手動モードなら任意の文字や記号も入力できます。';
+ $('ruleNotice').textContent=logic==='predicate'?'論理規則は左端・右端の式に適用します。∀左と∃右では任意の項を入力します。∀右と∃左では、結論に自由に現れない固有変数を指定してください。項の英字名は自由変数・パラメータとして扱います。等号の専用推論規則とcutの自動適用は未実装です。':'教科書に合わせ、論理規則は左側の先頭・右側の末尾に適用します。途中の式にはexchangeで移動させてください。∧左1・∧左2、∨右1・∨右2、weakening、contractionも区別しています。cutの自動適用は未実装です。';
+ $('manualPaletteNotice').textContent=logic==='predicate'?'述語論理の基本式と量化記号は自動モードでも使えます。その他の拡張記号は手動モードで入力してください。':'LKの基本結合子以外の記号を含む式は手動モードで入力してください。';
+ document.body.classList.toggle('manual-active',mode==='manual');$('modeAuto').classList.toggle('active',mode==='auto');$('modeManual').classList.toggle('active',mode==='manual');$('modeAuto').setAttribute('aria-pressed',String(mode==='auto'));$('modeManual').setAttribute('aria-pressed',String(mode==='manual'));$('modeHelp').textContent=mode==='auto'?'推論規則を選ぶと上段を自動生成します。':'上段の文字・記号・規則名を自由に入力します。規則の正しさは自動判定しません。';const canvas=$('canvas'),x=canvas.scrollLeft,y=canvas.scrollTop;const tree=$('tree');tree.replaceChildren(sequentNode(root));canvas.scrollLeft=x;canvas.scrollTop=y;const remaining=leaves(root).length;const anyManual=(function check(n){return !!n.manual||n.children.some(check)})(root);$('stat').innerHTML=remaining?'<strong>未完成 '+remaining+' 枝</strong>':anyManual?'<strong style="color:var(--green)">図が完成（未検証） ✓</strong>':'<strong style="color:var(--green)">証明完成 ✓</strong>';
+const n=find(root,current),sel=selected&&selected.id===n?.id?selected:null;$('manualSelection').textContent=n?'選択中: '+textSeq(n):'枝を選択してください';$('manualAdd').disabled=!n||!!n.rule;$('manualEdit').disabled=!n||!!n.rule;$('selection').textContent=sel?'選択: '+(sel.side==='left'?'左':'右')+' の '+fmt((sel.side==='left'?n.left:n.right)[sel.i]):n&&!n.rule?'このシークエントの論理式をタップしてください':'未証明の枝をタップしてください';$('closeAxiom').style.display=n&&!n.rule&&n.manualSeq==null&&n.left.length===1&&n.right.length===1&&equal(n.left[0],n.right[0])?'inline-block':'none';const box=$('rules');box.replaceChildren();const rules=ruleButtons(n);if(rules.length===0){const p=document.createElement('span');p.className='hint';p.textContent=n&&!n.rule?'式を選択すると適用できる規則が表示されます。':'枝を選んでください。';box.append(p)}else for(const [name,code] of rules){const b=document.createElement('button');b.className='rule-chip'+(['W','C','XL','XR'].includes(code)?' utility':'');b.textContent=name;b.onclick=()=>code==='⊃左'?implicationSplit():['∀左','∀右','∃左','∃右'].includes(code)?applyQuantifier(code):applySimple(code);box.append(b)}$('undo').disabled=history.length===0}
+function exportLatex(){function rec(n){let out='';for(const c of n.children)out+=rec(c);const s=textSeq(n).replace(/¬/g,'\\neg ').replace(/∧/g,'\\land ').replace(/∨/g,'\\lor ').replace(/⊃/g,'\\supset ').replace(/→/g,'\\to ').replace(/∀/g,'\\forall ').replace(/∃/g,'\\exists ');const name=n.rule? n.rule.replace(/∧/g,'\\land ').replace(/∨/g,'\\lor ').replace(/⊃/g,'\\supset ').replace(/¬/g,'\\neg ').replace(/∀/g,'\\forall ').replace(/∃/g,'\\exists '):'?';if(n.closed)return out+'\\AxiomC{$'+s+'$}\n';if(!n.children.length)return out+'\\AxiomC{$\\text{未証明: } '+s+'$}\n';return out+'\\RightLabel{\\scriptsize '+name+'}\n'+(n.children.length===2?'\\BinaryInfC':'\\UnaryInfC')+'{$'+s+'$}\n'}return '\\begin{prooftree}\n'+rec(root)+'\\end{prooftree}\n'}
 async function copyLatex(){const v=exportLatex();try{await navigator.clipboard.writeText(v);toast('LaTeXをコピーしました')}catch(e){const t=document.createElement('textarea');t.value=v;document.body.append(t);t.select();document.execCommand('copy');t.remove();toast('LaTeXをコピーしました')}}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function downloadSvg(){const ctx=document.createElement('canvas').getContext('2d');ctx.font='18px Georgia, serif';function textW(s){return ctx.measureText(s).width+28}function layout(n){const label=textSeq(n),children=n.children.map(layout),childW=children.length?children.reduce((sum,c)=>sum+c.w,0)+(children.length-1)*32:0;const width=Math.max(textW(label)+45,childW,90),height=children.length?Math.max(...children.map(c=>c.h))+65:65;return {n,label,children,w:width,h:height}}
 const r=layout(root);const parts=[];function draw(x,y,l){const base=x+l.w/2,seqY=y+l.h-12;let childTop=0;if(l.children.length){const widths=l.children.reduce((a,c)=>a+c.w,0)+(l.children.length-1)*32;let cx=x+(l.w-widths)/2;for(const ch of l.children){draw(cx,y+l.h-65-ch.h,ch);cx+=ch.w+32}const lineY=seqY-26;parts.push('<line x1="'+(base-Math.max(textW(l.label)/2+15,35))+'" y1="'+lineY+'" x2="'+(base+Math.max(textW(l.label)/2+15,35))+'" y2="'+lineY+'" stroke="#293550" stroke-width="1.5"/>');parts.push('<text x="'+(base+Math.max(textW(l.label)/2+20,40))+'" y="'+(lineY+4)+'" font-size="11" fill="#53627e">'+esc(l.n.rule||'')+'</text>')}else if(l.n.closed){parts.push('<line x1="'+(base-textW(l.label)/2-5)+'" y1="'+(seqY-26)+'" x2="'+(base+textW(l.label)/2+5)+'" y2="'+(seqY-26)+'" stroke="#293550" stroke-width="1.5"/>');parts.push('<text x="'+(base+textW(l.label)/2+13)+'" y="'+(seqY-22)+'" font-size="11">始式</text>')}parts.push('<text x="'+base+'" y="'+seqY+'" text-anchor="middle" font-family="Georgia, Noto Serif, serif" font-size="18" fill="#1c2944">'+esc(l.label)+'</text>')}
 draw(24,20,r);const w=Math.ceil(r.w+48),h=Math.ceil(r.h+48);const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><rect width="100%" height="100%" fill="white"/>'+parts.join('')+'</svg>';const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='LK-proof.svg';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('SVGを保存しました')}
 
-const ruleNames=['始式','∧左1','∧左2','∧右','∨左','∨右1','∨右2','⊃左','⊃右','¬左','¬右','weakening 左','weakening 右','contraction 左','contraction 右','exchange 左','exchange 右','cut','その他（自由入力）'];
+const ruleNames=['始式','∧左1','∧左2','∧右','∨左','∨右1','∨右2','⊃左','⊃右','¬左','¬右','∀左','∀右','∃左','∃右','weakening 左','weakening 右','contraction 左','contraction 右','exchange 左','exchange 右','cut','その他（自由入力）'];
 // 常用の論理記号と、証明・集合論で使う拡張記号を分類します。
 const symbolGroups=[
  {name:'命題変数（大文字）',note:'A～Z',items:[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ']},
@@ -253,7 +307,7 @@ const symbolGroups=[
 (function buildGoalSymbols(){
  const details=document.createElement('details');details.className='manual-palette';
  const summary=document.createElement('summary');summary.textContent='すべての記号を表示（9カテゴリ）';details.append(summary);
- const notice=document.createElement('p');notice.className='hint';notice.textContent='LKの基本結合子以外の記号を含む式は手動モードで入力してください。';details.append(notice);
+ const notice=document.createElement('p');notice.className='hint';notice.id='manualPaletteNotice';notice.textContent='LKの基本結合子以外の記号を含む式は手動モードで入力してください。';details.append(notice);
  for(const group of symbolGroups){
    const category=document.createElement('details');category.className='goal-category';
    const caption=document.createElement('summary');caption.textContent=group.name+'（'+group.note+'）';category.append(caption);
@@ -319,6 +373,8 @@ const rows=document.createElement('div');panel.append(rows);const inputs=[];let 
 function addRow(value=''){if(inputs.length>=4){toast('上段は最大4つです');return}const wrap=document.createElement('div');wrap.className='manual-premise';const inp=document.createElement('input');inp.type='text';inp.value=value;inp.spellcheck=false;inp.placeholder='例：A → A';inp.setAttribute('aria-label','上段 '+(inputs.length+1));inp.addEventListener('focus',()=>focused=inp);const del=document.createElement('button');del.className='btn tiny';del.textContent='削除';del.type='button';del.onclick=()=>{const idx=inputs.indexOf(inp);if(idx>=0)inputs.splice(idx,1);wrap.remove();focused=inputs[0]??null};wrap.append(inp,del);rows.append(wrap);inputs.push(inp);return inp}
 addRow();const add=document.createElement('button');add.className='btn tiny';add.textContent='＋ 上段を追加';add.onclick=()=>{const x=addRow();x?.focus()};panel.append(add);addManualPad(panel,()=>focused??inputs[0]??null);
 modalFooter(panel,back,()=>{const values=inputs.map(x=>x.value.trim());if(values.some(x=>!x)){toast('空の上段があります。不要なら削除してください');return}const rule=select.value==='その他（自由入力）'?custom.value.trim():select.value;if(!rule){toast('規則名を入力してください');return}snapshot();n.rule=rule;n.manual=true;n.children=values.map(makeManualNode);n.closed=values.length===0;selected=null;current=n.children[0]?.id??firstOpen()??n.id;back.remove();persist();render()});inputs[0].focus()}
+$('logicProp').onclick=()=>switchLogic('prop');
+$('logicPredicate').onclick=()=>switchLogic('predicate');
 $('modeAuto').onclick=()=>{mode='auto';selected=null;persist();render()};
 $('modeManual').onclick=()=>{mode='manual';selected=null;persist();render()};
 $('manualAdd').onclick=composeManual;
@@ -329,6 +385,12 @@ $('start').onclick=() => start($('goal').value);
 $('goal').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();start($('goal').value)}});
 document.querySelectorAll('.sample').forEach(b=>b.onclick=()=>{$('goal').value=b.dataset.example;start(b.dataset.example)});
 $('undo').onclick=()=>{const s=history.pop();if(!s)return;root=s.root;nextId=s.nextId;selected=s.selected;current=selected?.id??firstOpen()??root.id;persist();render()};$('closeAxiom').onclick=markAxiom;$('svgExport').onclick=downloadSvg;$('latexExport').onclick=copyLatex;
-try{const saved=JSON.parse(localStorage.getItem('lk-proof-pad-v1'));if(saved?.root){root=saved.root;nextId=saved.nextId??1;mode=saved.mode==='manual'?'manual':'auto';$('goal').value=textSeq(root);current=firstOpen()??root.id}}catch(e){}if(!root){const parsed=parseSequent($('goal').value);root=newNode(parsed.left,parsed.right);current=root.id}render();
+try{
+ const saved=JSON.parse(localStorage.getItem('lk-proof-pad-v2'));
+ if(saved?.workspaces){workspaces=saved.workspaces;logic=saved.logic==='predicate'?'predicate':'prop';const data=workspaces[logic];if(data?.root){root=data.root;nextId=data.nextId??1;mode=data.mode==='manual'?'manual':'auto';$('goal').value=data.goal??textSeq(root);current=firstOpen()??root.id}}
+ if(!root){const old=JSON.parse(localStorage.getItem('lk-proof-pad-v1'));if(old?.root){logic='prop';root=old.root;nextId=old.nextId??1;mode=old.mode==='manual'?'manual':'auto';$('goal').value=textSeq(root);current=firstOpen()??root.id}}
+}catch(e){}
+if(!root){$('goal').value=LOGIC_DEFAULTS[logic];const parsed=parseSequent($('goal').value);root=newNode(parsed.left,parsed.right);current=root.id}
+$('goal').addEventListener('input',persist);persist();render();
 })();
 </script></body></html>
