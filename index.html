@@ -94,7 +94,10 @@ function parseFOL(source,asTerm=false){
  function unary(){
   if(take('¬'))return {k:'not',a:unary()};
   if(t[p]==='∀'||t[p]==='∃'){
-   const k=t[p++]==='∀'?'forall':'exists',v=t[p++];
+   const k=t[p++]==='∀'?'forall':'exists';let v=t[p++];
+   // ∀xP(x) / ∃yQ(y) のように空白なしで続く表記を分割します。
+   const packed=typeof v==='string'?v.match(/^([a-z][a-z0-9_]*)([A-Z][A-Za-z0-9_]*)$/):null;
+   if(packed){v=packed[1];t.splice(p,0,packed[2])}
    if(!/^[A-Za-z][A-Za-z0-9_]*$/.test(v??''))throw Error('量化記号の直後に変数名が必要です');
    take('.');
    return {k,v,a:unary()};
